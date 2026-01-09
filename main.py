@@ -2,13 +2,12 @@ import os
 import win32gui
 import win32con
 import time
-import subprocess
 import pygetwindow as gw
 from pynput import mouse
 from pynput import keyboard
 import pyautogui as p
 
-# --- 1. DRAG CONFIGURATION & GLOBALS ---
+# --- DRAG CONFIGURATION & GLOBALS ---
 HOLD_THRESHOLD = 0
 DRAG_THRESHOLD = 10
 drag_state = {
@@ -21,7 +20,7 @@ drag_state = {
     "start_y": 0
 }
 
-# --- 2. EXISTING GLOBALS ---
+# --- GLOBALS ---
 windows = gw.getAllTitles()
 active_window = win32gui.GetForegroundWindow()
 title = win32gui.GetWindowText(active_window)
@@ -32,17 +31,24 @@ listener_running = True
 paused = False
 
 alt_combos = {
-    'f': 'fullscreen',
+    'ctrl+q': 'exit',
+    'ctrl+m': 'shutdown',
+    'ctrl+r': 'reload',
+    'ctrl+p': 'pause',
+    'ctrl+t': 'taskbar',
+
+    'shift+b': 'browser',
+    'shift+m': 'music',
     'shift+f': 'files',
     'shift+v': 'vscode',
-    'w': 'kill',
+
     'enter': 'terminal',
-    'shift+r': 'minimize',
-    'shift+b': 'browser',
-    'shift+m': 'music'
+    'w': 'kill',
+    'f': 'fullscreen',
+    'r': 'minimize'
 }
 
-# --- 3. HELPER FUNCTIONS ---
+# --- HELPER FUNCTIONS ---
 
 def is_window_maximized(hwnd):
     try:
@@ -56,8 +62,6 @@ def get_window_rect(hwnd):
         return win32gui.GetWindowRect(hwnd)
     except:
         return None
-
-# --- 4. FIND FUNCTION ---
 
 def find(element, timeout=0):
     if timeout != 0:
@@ -79,7 +83,7 @@ def find(element, timeout=0):
                 p.press('right')
                 return False
 
-# --- 5. PYNPUT LISTENERS ---
+# --- PYNPUT LISTENERS ---
 
 def on_click(x, y, button, pressed):
     global button_signal, listener_running, drag_state
@@ -195,11 +199,11 @@ def on_move(x, y):
 def on_key_press(key):
     global alt_mode, button_signal, listener_running
 
-    # Track Shift modifier
+    # Track modifier
     if key in (keyboard.Key.shift, keyboard.Key.shift_l, keyboard.Key.shift_r):
         current_modifiers.add('shift')
-
-    # Check if Alt pressed → enter Alt mode
+    elif key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
+            current_modifiers.add('ctrl')
     elif key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
         alt_mode = True
         return
@@ -207,11 +211,19 @@ def on_key_press(key):
     # Check Alt-mode combos
     elif alt_mode:
         combo = ''
+        if 'ctrl' in current_modifiers:
+            combo += 'ctrl+'
         if 'shift' in current_modifiers:
             combo += 'shift+'
 
         try:
-            combo += key.char.lower()
+            # Use vk to get the raw character even if Ctrl/Alt are held
+            if hasattr(key, 'vk') and key.vk is not None:
+                # Standardize to lowercase character
+                char = chr(key.vk).lower() if 65 <= key.vk <= 90 else key.char.lower()
+                combo += char
+            else:
+                combo += key.char.lower()
         except AttributeError:
             if key == keyboard.Key.enter:
                 combo += 'enter'
@@ -221,16 +233,27 @@ def on_key_press(key):
         if combo in alt_combos:
             button_signal = alt_combos[combo]
             listener_running = False
-            print(f"Alt combo triggered: {button_signal}")
+            print(f"Alt-Ctrl combo triggered: {button_signal}")
+
+        # try:
+        #     combo += key.char.lower()
+        # except AttributeError:
+        #     if key == keyboard.Key.enter:
+        #         combo += 'enter'
+        #     else:
+        #         combo += str(key).replace('Key.', '')
+
+        # if combo in alt_combos:
+        #     button_signal = alt_combos[combo]
+        #     listener_running = False
+        #     print(f"Alt combo triggered: {button_signal}")
 
 def on_key_release(key):
     global alt_mode
-
-    # Remove Shift from modifiers
     if key in (keyboard.Key.shift, keyboard.Key.shift_l, keyboard.Key.shift_r):
         current_modifiers.discard('shift')
-
-    # Exit Alt mode when Alt released
+    if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r):
+        current_modifiers.discard('ctrl')
     if key in (keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r):
         alt_mode = False
 
@@ -275,13 +298,13 @@ def x1_powerpoint():
         return
     p.click(coord)
     p.moveTo(mouse_pos)
-    p.hotkey('ctrl', 'b')
-    p.hotkey('ctrl', 'u')
+    p.hotkey('shift', 'b')
+    p.hotkey('shift', 'u')
     main()
 
 def x2_powerpoint():
     p.click()
-    p.hotkey('ctrl', 'a')
+    p.hotkey('shift', 'a')
     mouse_pos = p.position()
     coord = find('paste.jpg', 2)
     if not coord:
@@ -297,7 +320,7 @@ def x1_propresenter():
     p.click(find('edit.jpg'))
     p.moveTo(mouse_pos)
     # p.click()
-    # p.hotkey('ctrl', 'a')
+    # p.hotkey('shift', 'a')
     # p.hotkey('alt', 'v')
     main()
 
@@ -308,7 +331,7 @@ def x2_propresenter():
     p.moveTo(mouse_pos)
     time.sleep(0.1) # ---------
     p.click()
-    p.hotkey('ctrl', 'a')
+    p.hotkey('shift', 'a')
     p.hotkey('alt', 'v')
     p.press('esc')
     p.press('esc')
@@ -440,7 +463,7 @@ def main():
     while True:
         signal = startListener()
         
-        if signal == 'pause': # alt ctrl p
+        if signal == 'pause': # alt shift p
             if paused == False:
                 win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, r"C:\Users\Sweetwaters Church\Pictures\wallpaper.png", 1+2)
                 os.system('py paused.py')
@@ -453,14 +476,14 @@ def main():
         elif paused == True:
             continue 
         
-        elif signal == "exit": # alt ctrl q
+        elif signal == "exit": # alt shift q
             os.system('exit')
             print('Exitting')
             win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, r"C:\Users\Sweetwaters Church\Pictures\wallpaper.png", 1+2)
             print('Wallpaper Set')
             exit()
 
-        elif signal == "shutdown": # alt ctrl m
+        elif signal == "shutdown": # alt shift m
             print('Shutting Down')
             if 'GlazeWM' in windows:
                 os.startfile(r"C:\Users\Sweetwaters Church\Jordan\Scripts\WM-Exit\WM-Exit.cmd")
@@ -478,12 +501,12 @@ def main():
             kill_all()
             exit()
 
-        elif signal == 'reload': # alt ctrl r
+        elif signal == 'reload': # alt shift r
             print('reloading config')
             os.system(r'start "" pyw "C:\Users\Sweetwaters Church\Jordan\Scripts\Shortcuts\main.py"')
             exit()
 
-        elif signal == 'taskbar': # alt ctrl t
+        elif signal == 'taskbar': # alt shift t
             taskbar()
 
         elif signal == 'terminal': # alt enter
