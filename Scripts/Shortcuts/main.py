@@ -9,6 +9,7 @@ import win32api
 import pyautogui as p
 import pygetwindow as gw
 from pynput import mouse, keyboard
+import keyboard as key
 
 # --- CONFIGURATION ---
 CONFIG = {
@@ -265,12 +266,15 @@ class AutomationEngine:
         # Hide Desktop Icons
         p.moveTo(self.screen_w - 5, self.screen_h - 1)
         p.click(self.screen_w - 5, self.screen_h - 1) # Show desktop corner
-        time.sleep(0.5)
-        p.rightClick(self.screen_w // 2, self.screen_h // 2)
-        p.press(['right', 'up', 'enter'])
+        time.sleep(0.1)
+        p.rightClick(self.screen_w - 30, self.screen_h // 2)
+        p.press('right')
+        p.press('up')
+        p.press('enter')
         
         win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, CONFIG["wallpaper_black"], 1+2)
         self.exec_kill_all()
+        os.system(f'start "" py "{os.path.join(CONFIG["scripts_dir"], "shutdown.py")}"')
         os.system('exit')
         exit()
     
@@ -342,6 +346,8 @@ class AutomationEngine:
     def run(self):
         # Set Wallpaper
         win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, CONFIG["wallpaper"], 1+2)
+        key.remap_key('left windows', 'left alt')
+        key.remap_key('left alt', 'left windows')
         print("Engine Started. Listening...")
 
         # Start Threads
@@ -372,6 +378,7 @@ class AutomationEngine:
         
         m_listener.stop()
         k_listener.stop()
+        key.unhook_all()
 
     def handle_global_command(self, cmd):
         print(f"Executing: {cmd}")
@@ -401,10 +408,10 @@ class AutomationEngine:
                 print('Glaze / YASB Closing')
                 os.system("yasbc stop")
                 os.system("glazewm command wm-exit")
-                self.exec_taskbar_toggle
+                self.exec_taskbar_toggle()
             else:
                 print('Glaze / YASB Starting')
-                self.exec_taskbar_toggle
+                self.exec_taskbar_toggle()
                 os.startfile('yasb')
                 os.startfile(CONFIG["paths"]["glaze_wm"])
                 
