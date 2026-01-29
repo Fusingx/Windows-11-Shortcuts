@@ -1,0 +1,1 @@
+pip install win32gui pyautogui pygetwindow pynput keyboard
