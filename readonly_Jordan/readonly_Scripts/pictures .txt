@@ -1,0 +1,39 @@
+move pictures from hardrive to PC
+open lightroom
+new import
+
+*edit pictures
+
+export
+open chris's email
+copy sermon notes
+open SW chatgpt
+paste sermon notes in 'quote'
+
+*select the quote
+
+open PP for quote
+paste raw text of the selected quote
+
+*edit quote image
+
+export quote image
+open meta post
+paste the caption using:
+	quote
+	devo link from SW website
+add photos from desktop
+crop pictures
+
+done
+
+
+
+
+
+
+
+
+
+
+
