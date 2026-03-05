@@ -1,1 +1,0 @@
-sudo winget install --id karlstav.cava glzr-io.glazewm AmN.yasb Starship.Starship Microsoft.PowerToys Fastfetch-cli.Fastfetch
