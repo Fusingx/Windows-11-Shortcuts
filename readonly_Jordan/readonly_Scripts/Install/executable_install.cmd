@@ -1,0 +1,1 @@
+'AltSnap.AltSnap', 'Python.Python.3.14', 'karlstav.cava', 'Starship.Starship', 'Microsoft.PowerToys', 'Fastfetch-cli.Fastfetch', 'Git.Git', '9NHL4NSC67WM' | ForEach-Object { sudo winget install --id $_ --accept-package-agreements --accept-source-agreements }
