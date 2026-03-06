@@ -355,6 +355,8 @@ class AutomationEngine:
                         p.moveTo(loc)
                         time.sleep(0.1)
                         p.click(loc)
+                        time.sleep(0.1)
+                        p.click()
                         p.hotkey('ctrl', 'a')
                         p.hotkey('alt', 'v')
                     p.press('esc', presses=2)
