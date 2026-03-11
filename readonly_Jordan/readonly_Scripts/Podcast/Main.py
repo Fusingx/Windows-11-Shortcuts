@@ -30,10 +30,10 @@ TIMEOUT = 7
 # HELPER FUNCTIONS
 
 def close_terminal():
-    # win32gui.ShowWindow(win32gui.FindWindow(None, 'powershell'), win32con.SW_MINIMIZE)
-    # win32gui.ShowWindow(win32gui.FindWindow(None, r'C:\WINDOWS\system32\cmd.exe'), win32con.SW_MINIMIZE)
-    # win32gui.ShowWindow(win32gui.FindWindow(None, r'C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe'), win32con.SW_MINIMIZE)
-    # win32gui.ShowWindow(win32gui.FindWindow(None, 'Main.py - Scripts - Visual Studio Code'), win32con.SW_MINIMIZE)
+    win32gui.ShowWindow(win32gui.FindWindow(None, 'powershell'), win32con.SW_MINIMIZE)
+    win32gui.ShowWindow(win32gui.FindWindow(None, r'C:\WINDOWS\system32\cmd.exe'), win32con.SW_MINIMIZE)
+    win32gui.ShowWindow(win32gui.FindWindow(None, r'C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe'), win32con.SW_MINIMIZE)
+    win32gui.ShowWindow(win32gui.FindWindow(None, 'Main.py - Scripts - Visual Studio Code'), win32con.SW_MINIMIZE)
     win32gui.ShowWindow(win32gui.FindWindow(None, 'Windows PowerShell'), win32con.SW_MINIMIZE)
 
 def find(image, timeout=6.0):
@@ -55,7 +55,6 @@ def paste(text):
 
 def main():
     # // MOVING SERMON //
-
 
     sermon_day = 'pass'
     sermon_month = datetime.today().strftime('%m')
@@ -161,35 +160,38 @@ def main():
     os.makedirs(podcast_folder, exist_ok=True)                              # make the "C:\Users\Sweetwaters Church\Documents\Jordan's Desktop\Documents\Podcast Editing\Podcast Name" folder from the variable podcast_folder
     print(f"Folder created at: {podcast_folder}")                   # podcast_folder = "C:\\Users\\Sweetwaters Church\\Documents\\Jordan's Desktop\\Documents\\Podcast Editing\\test 5"
 
-    # SERMON
+    # # SERMON
 
-    p.press('esc')
-    p.hotkey('ctrl', 'e') # export
+    if not os.path.exists(CONFIG["paths"]["sermon"]):
+        p.press('esc')
+        p.hotkey('ctrl', 'e') # export
 
-    cVideoChecked = find('cVideoChecked.jpg')
-    x1, y1 = int(cVideoChecked[0] + 8), int(cVideoChecked[1] + 8)
-    if p.pixel(x1, y1) == (81, 81, 81):
-        p.click(x1, y1)
+        cVideoChecked = find('cVideoChecked.jpg')
+        x1, y1 = int(cVideoChecked[0] + 8), int(cVideoChecked[1] + 8)
+        if p.pixel(x1, y1) == (81, 81, 81):
+            p.click(x1, y1)
 
-    cAudioUnchecked = find('cAudioUnchecked.jpg')
-    x1, y1 = int(cAudioUnchecked[0] + 8), int(cAudioUnchecked[1] + 8)
-    if p.pixel(x1, y1) == (0, 193, 205):
-        p.click(x1, y1)
-    
-    p.click(find('cExportpath.jpg')) # click export to
-    time.sleep(0.5)
-    paste(CONFIG['sermon_folder']) # type export path
-    time.sleep(0.5)
-    p.press('enter')       # confirm path
-    time.sleep(0.5)
-    p.press('enter')       # confirm path
-    time.sleep(0.5)
-    p.press('enter')       # export
+        cAudioUnchecked = find('cAudioUnchecked.jpg')
+        x1, y1 = int(cAudioUnchecked[0] + 8), int(cAudioUnchecked[1] + 8)
+        if p.pixel(x1, y1) == (0, 193, 205):
+            p.click(x1, y1)
+        
+        p.click(find('cExportpath.jpg')) # click export to
+        time.sleep(0.5)
+        paste(CONFIG['sermon_folder']) # type export path
+        time.sleep(0.5)
+        p.press('enter')       # confirm path
+        time.sleep(0.5)
+        p.press('enter')       # confirm path
+        time.sleep(0.5)
+        p.press('enter')       # export
 
-    while not os.path.exists(CONFIG['paths']["sermon"]):      # while the output path doesnt exist, wait
-        time.sleep(1)
-    time.sleep(5) # just incase
-    p.press('esc')
+        while not os.path.exists(CONFIG['paths']["sermon"]):      # while the output path doesnt exist, wait
+            time.sleep(1)
+        time.sleep(5) # just incase
+        p.press('esc')
+        input('press enter when ready to export audio')
+        close_terminal()
 
     #AUDIO
 
@@ -257,12 +259,14 @@ def main():
 
     # upload yt sermon
 
-    subprocess.Popen(CONFIG["paths"]["chrome"])
-    p.click(find('ySelect.jpg'))
-    paste(CONFIG['paths']["sermon"])
-    p.press('enter')
-    p.click(find('yReuse'))
+    if os.path.exists(CONFIG["paths"]["sermon"]):
+        subprocess.Popen(CONFIG["paths"]["youtube"])
+        p.click(find('ySelect.jpg'))
+        paste(CONFIG['paths']["sermon"])
+        p.press('enter')
+        p.click(find('yReuse'))
 
+    # levelator 2
     while not os.path.exists(output_path):      # while the output path doesnt exist, wait
         time.sleep(1)
     time.sleep(5) # i just added this to check if it needs some delay after export ##############

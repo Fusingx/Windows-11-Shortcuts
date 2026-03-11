@@ -29,7 +29,8 @@ CONFIG = {
         "vscode": r"C:\Users\Sweetwaters Church\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk",
         "glaze_wm": r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\GlazeWM.lnk",
         "spotify": r"C:\Users\Sweetwaters Church\AppData\Roaming\Spotify\Spotify.exe",
-        "explorer": r"C:\Users\Sweetwaters Church\Jordan"
+        "explorer": r"C:\Users\Sweetwaters Church\Jordan",
+        "schedule": r"C:\Users\Sweetwaters Church\Jordan\Documents\Misc\schedule.xlsx"
     },
     "ignore_titles": {'Zen', 'Explorer', 'CapCut', 'Chrome', 'Select exporting path', 'Spotify', 'File Upload', 'Files'}
 }
@@ -47,6 +48,7 @@ ALT_COMBOS = {
     'shift+m': 'music',
     'shift+f': 'files',
     'shift+v': 'vscode',
+    'shift+s': 'schedule',
     'shift+y': 'yasb',
     'enter': 'terminal',
 
@@ -64,6 +66,7 @@ class AutomationEngine:
         
         # State Tracking
         self.modifiers = set()
+        self.gui_process = None  # Track the GUI subprocess
         self.alt_mode = False
         self.drag_state = {
             "active": False, "middle_held": False, "hwnd": None, 
@@ -72,6 +75,18 @@ class AutomationEngine:
         
         # Pre-load screen size
         self.screen_w, self.screen_h = p.size()
+
+    def toggle_schedule(self):
+        # 1. Check if we have a process and if it's ACTUALLY still alive
+        if self.gui_process and self.gui_process.poll() is None:
+            # It's alive, so the user wants to close it
+            self.gui_process.terminate()
+            self.gui_process = None 
+        else:
+            # It's either None or it was closed manually, so spawn a fresh one
+            gui_path = os.path.join(os.path.dirname(__file__), "tasks.py")
+            # Use 'python' if you want a console for debugging, 'pythonw' to keep it silent
+            self.gui_process = subprocess.Popen(["pythonw", gui_path])
 
     # --- LOW LEVEL WINDOW HELPERS ---
     def get_window_at_point(self, x, y):
@@ -438,6 +453,7 @@ class AutomationEngine:
     def handle_global_command(self, cmd):
         print(f"Executing: {cmd}")
         if cmd == 'exit':
+            if self.gui_process: self.gui_process.terminate()
             win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, CONFIG["wallpaper_black"], 1+2)
             self.exec_toggle_cursor(colour=CONFIG['white_cursor_dir'])
             self.running = False
@@ -459,6 +475,12 @@ class AutomationEngine:
         elif cmd == 'music': os.startfile(CONFIG['paths']['spotify'])
         elif cmd == 'files': os.startfile("Explorer.exe")  # CONFIG['paths']['explorer']
         elif cmd == 'vscode': os.startfile(CONFIG["paths"]["vscode"])
+        elif cmd == 'schedule': self.toggle_schedule()
+            # windows = gw.getAllTitles()
+            # if 'schedule.xlsx - Excel' in windows:
+            #     pass
+            # else:
+            #     os.startfile(CONFIG["paths"]["schedule"])
         elif cmd == 'yasb':
             windows = gw.getAllTitles()
             if 'YasbBar' in windows:

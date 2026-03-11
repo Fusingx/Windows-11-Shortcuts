@@ -1,0 +1,125 @@
+import tkinter as tk
+import json
+import os
+from datetime import datetime
+
+# --- SETTINGS & DATA ---
+DATA_FILE = "task_data.json"
+today = datetime.now().strftime("%A")
+
+# Your full task dictionary
+tasks = {
+    "Monday": [
+        "Move Offering Bags From Rodwins Office to Church before 8:30am",
+        "Attend weekly staff meeting at 9am (1 to 1.5 hours)",
+        "Select, Edit and Post (after approval) 11+ Photos (Including Quote) (2-3 Hours)",
+        "Send photos onto the church media content group for approval",
+        "Edit and Post Podcast (30 Minutes)",
+        "Edit and Post YouTube Video of Sermon (30 Minutes)",
+        "Edit Prayer Image and send to Chris (10 Minutes)",
+        "Copy photos onto external and Clear SD cards (10 Minutes)"
+    ],
+    "Tuesday": [
+        "Prepare songs and Mics (x2) for Hope Service",
+        "Do sound and projection for Hope service (1 Hour)",
+        "Move Prayer Meeting Banner",
+        "Select, Edit and Post Photos of Saturday or other events (1-2 Hours)",
+        "Send photos onto the church media content group for approval",
+        "Create Recap Video (1-2 Hours)",
+        "Submit Recap video for approval by 2pm on Church Media Group",
+        "Get approval and edit if necessary by 2:45pm",
+        "Setup camera and sound for Discipleship (15 Minutes)",
+        "Do sound and projection for Discipleship (Every 2nd Week) (2.5 Hours)"
+    ],
+    "Wednesday": [
+        "Do sound and projection for Prayer Meeting (Every 2nd week) (1 Hour)",
+        "Packup after Prayer Meeting (20 Minutes)",
+        "Rotate Posters (10 Minutes)",
+        "Edit Kids Church Powerpoint Video (15 Minutes)",
+        "Edit Kids Church Powerpoint Presentation (30 Minutes)",
+        "Edit Kids Church AD Image (15 Minutes)",
+        "Get announcement information & recordings for Sunday (1 Hour)",    
+        "Edit Announcement Video for Main & CITM Service (1 Hour)",
+        "Ensure batteries are charged (Mic, Camera etc...) (10 Minutes)",
+    ],
+    "Thursday": [
+        "Load CITM Worship Songs & Announcement Video (15 Minutes)",
+        "Load Main Service Worship Lyrics (IO Minutes)",
+        "Create 'Look Forward' Video (filming / recording & editing) (2-3 Hours)",
+        "Do sound and projection for Ladies Meeting (Every 2nd & 4th week) (2 Hour)",
+        "Ensure sound desk and work area is neat and tidy (15 Minutes)",
+        "Meet with Chris about Youth Prep (30 Minutes)",
+    ],
+    "Friday": [
+        "Make stage neat and tidy and ready for Sunday service (15 Minutes)"
+        "Projects (Discipleship Slides, youth centre stuff etc...) (1-2 Hours)"
+        "Confirm with Venessa if CITM box is packed, then put the box in Ps"
+        "Rodwin's car boot (10 Minutes)"
+        "Set Up for Youth (30 Minutes)"
+        "Do sound and projection for Youth (2.5 Hours)"
+    ]
+}
+
+def load_data():
+    """Loads saved states from JSON if it exists."""
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_data():
+    """Saves the current state of all checkboxes to JSON."""
+    data_to_save = {}
+    for task, var in checkbox_vars.items():
+        data_to_save[task] = var.get()
+    with open(DATA_FILE, "w") as f:
+        json.dump(data_to_save, f)
+
+# --- GUI SETUP ---
+root = tk.Tk()
+root.overrideredirect(True)
+root.configure(bg="#cdd6f4") # Border Color
+root.geometry('575x700+500+200')
+
+main_container = tk.Frame(root, bg="#1e1e2e")
+main_container.pack(fill="both", expand=True, padx=2, pady=2)
+
+# Load existing progress
+saved_states = load_data()
+checkbox_vars = {} # To keep track of { "Task Text": BooleanVar }
+
+def toggle_strike(cb, var, task_text):
+    """Updates font and triggers a save."""
+    if var.get():
+        cb.config(font=("JetBrainsMono Nerd Font", 12, "overstrike"), fg="#888888")
+    else:
+        cb.config(font=("JetBrainsMono Nerd Font", 12), fg="#cdd6f4")
+    save_data() # Save every time a box is clicked
+
+# Header
+tk.Label(main_container, text=f"{today} Fusing Checklist", font=("JetBrainsMono Nerd Font", 20, "bold"), 
+         bg="#1e1e2e", fg="#cdd6f4").pack(pady=20)
+
+# Build Task List
+current_tasks = tasks.get(today, ["No tasks found."])
+
+for task_text in current_tasks:
+    # Create variable and set it to the saved state (default False)
+    var = tk.BooleanVar(value=saved_states.get(task_text, False))
+    checkbox_vars[task_text] = var
+    
+    cb = tk.Checkbutton(
+        main_container, text=task_text, variable=var,
+        bg="#1e1e2e", fg="#cdd6f4", activebackground="#1e1e2e",
+        selectcolor="#1e1e2e", font=("JetBrainsMono Nerd Font", 12)
+    )
+    
+    # Run toggle_strike immediately to apply fonts to loaded data
+    cb.config(command=lambda c=cb, v=var, t=task_text: toggle_strike(c, v, t))
+    toggle_strike(cb, var, task_text) 
+    cb.pack(pady=5, anchor="w", padx=30)
+
+# Exit Button
+tk.Button(main_container, text="EXIT", command=root.destroy, bg="#1e1e2e", fg="#444", bd=0).place(x=520, y=10)
+
+root.mainloop()
