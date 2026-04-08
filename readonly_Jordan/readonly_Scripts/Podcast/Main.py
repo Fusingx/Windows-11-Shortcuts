@@ -36,7 +36,7 @@ def close_terminal():
     win32gui.ShowWindow(win32gui.FindWindow(None, 'Main.py - Scripts - Visual Studio Code'), win32con.SW_MINIMIZE)
     win32gui.ShowWindow(win32gui.FindWindow(None, 'Windows PowerShell'), win32con.SW_MINIMIZE)
 
-def find(image, timeout=6.0):
+def find(image, timeout=15.0):
     image_path = os.path.join(CONFIG["images_dir"], image)
     start = time.time()
     print(f"Looking for {image}...")
@@ -113,6 +113,7 @@ def main():
             print('CapCut Update Window Closed')
 
         cSermon = (find('cSermon.jpg', timeout=15))
+        time.sleep(0.5)
         p.click(cSermon[0] + 20, cSermon[1] - 20) # clicks using x + 20 (20px right) and y -20 (20px up)
         break
 
@@ -149,18 +150,10 @@ def main():
         p.press('enter')
         print('Import Successful')
 
-    podcast_name = input('What is the name of this weeks podcast? (Enter when ready to export, with CapCut maximized)\n')
-    podcast_path_name = podcast_name
-
-    for char in CONFIG['illegal_characters']:
-        podcast_path_name = podcast_path_name.replace(char, '')
-
+    podcast_name = input('Podcast Name? (Enter to export sermon)\n')
     close_terminal()
-    podcast_folder = os.path.join(CONFIG['podcast_editing_dir'], podcast_path_name)          # base_path = "C:\\Users\\Sweetwaters Church\\Documents\\Jordan's Desktop\\Documents\\Podcast Editing", podcast_name = 'test 5'
-    os.makedirs(podcast_folder, exist_ok=True)                              # make the "C:\Users\Sweetwaters Church\Documents\Jordan's Desktop\Documents\Podcast Editing\Podcast Name" folder from the variable podcast_folder
-    print(f"Folder created at: {podcast_folder}")                   # podcast_folder = "C:\\Users\\Sweetwaters Church\\Documents\\Jordan's Desktop\\Documents\\Podcast Editing\\test 5"
 
-    # # SERMON
+    # SERMON
 
     if not os.path.exists(CONFIG["paths"]["sermon"]):
         p.press('esc')
@@ -186,14 +179,25 @@ def main():
         time.sleep(0.5)
         p.press('enter')       # export
 
-        while not os.path.exists(CONFIG['paths']["sermon"]):      # while the output path doesnt exist, wait
-            time.sleep(1)
-        time.sleep(5) # just incase
-        p.press('esc')
-        input('press enter when ready to export audio')
-        close_terminal()
+    podcast_path_name = podcast_name
+    for char in CONFIG['illegal_characters']:
+        podcast_path_name = podcast_path_name.replace(char, '')
+
+    
+    podcast_folder = os.path.join(CONFIG['podcast_editing_dir'], podcast_path_name)          # base_path = "C:\\Users\\Sweetwaters Church\\Documents\\Jordan's Desktop\\Documents\\Podcast Editing", podcast_name = 'test 5'
+    os.makedirs(podcast_folder, exist_ok=True)                              # make the "C:\Users\Sweetwaters Church\Documents\Jordan's Desktop\Documents\Podcast Editing\Podcast Name" folder from the variable podcast_folder
+    print(f"Folder created at: {podcast_folder}")                   # podcast_folder = "C:\\Users\\Sweetwaters Church\\Documents\\Jordan's Desktop\\Documents\\Podcast Editing\\test 5"
+
+    while not os.path.exists(CONFIG['paths']["sermon"]):      # while the output path doesnt exist, wait
+        time.sleep(1)
+    p.press('esc')
+
+
+    input('press enter when ready to export audio')
+    close_terminal()
 
     #AUDIO
+
 
     p.press('esc')
     p.hotkey('ctrl', 'e') # export
@@ -264,7 +268,7 @@ def main():
         p.click(find('ySelect.jpg'))
         paste(CONFIG['paths']["sermon"])
         p.press('enter')
-        p.click(find('yReuse'))
+        p.click(find('yReuse.jpg'))
 
     # levelator 2
     while not os.path.exists(output_path):      # while the output path doesnt exist, wait
@@ -388,7 +392,7 @@ def main():
     # p.hotkey('ctrl', 'c')
     # p.click(find('bCreate.jpg'))
     p.click(find('bUpload.jpg'))
-    time.sleep(1.5)
+    time.sleep(3)
     paste(f"{podcast_path}")
     time.sleep(2.5)
     p.press('enter')

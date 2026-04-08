@@ -1,5 +1,6 @@
 import win32gui
 import win32process
+import pygetwindow as gw
 import psutil
 import time
 
@@ -17,3 +18,4 @@ def inspect_active_window():
 
 time.sleep(4)
 inspect_active_window()
+print(gw.getAllTitles())

@@ -27,11 +27,11 @@ def find(image, timeout=5.0):
 screen_w, screen_h = p.size()
 
 p.rightClick(screen_w - 30, screen_h // 2)
-time.sleep(1)
+time.sleep(1.2)
 p.press('right')
-time.sleep(0.1)
+time.sleep(0.2)
 p.press('up')
-time.sleep(0.1)
+time.sleep(0.2)
 p.press('enter')
 
 print('Toggling Taskbar')
@@ -54,6 +54,7 @@ p.moveTo(current_pos)
 
 os.startfile(r"C:\Program Files\Windhawk\Windhawk.exe", arguments="-tray-only")
 os.startfile(r"C:\Users\Sweetwaters Church\AppData\Roaming\AltSnap\AltSnap.exe")
+os.startfile(r"C:\Program Files\CopyQ\copyq.exe")
 os.startfile('zen.exe') # open zen and spotify
 os.startfile(r"C:\Users\Sweetwaters Church\AppData\Roaming\Spotify\Spotify.exe")
 

@@ -1,0 +1,7 @@
+# This file is used internally by FFMPEG.
+file 'file:C:/Users/Sweetwaters Church/Jordan/Scripts/manim/media/videos/main/480p15/partial_movie_files/FusingText/1584795214_595305761_223132457.mp4'
+file 'file:C:/Users/Sweetwaters Church/Jordan/Scripts/manim/media/videos/main/480p15/partial_movie_files/FusingText/4072820271_3201849554_675831232.mp4'
+file 'file:C:/Users/Sweetwaters Church/Jordan/Scripts/manim/media/videos/main/480p15/partial_movie_files/FusingText/4072820271_549889_3808372994.mp4'
+file 'file:C:/Users/Sweetwaters Church/Jordan/Scripts/manim/media/videos/main/480p15/partial_movie_files/FusingText/4072820271_3977531977_3347251879.mp4'
+file 'file:C:/Users/Sweetwaters Church/Jordan/Scripts/manim/media/videos/main/480p15/partial_movie_files/FusingText/4072820271_1089801147_3347251879.mp4'
+file 'file:C:/Users/Sweetwaters Church/Jordan/Scripts/manim/media/videos/main/480p15/partial_movie_files/FusingText/4072820271_2408024828_3602426671.mp4'

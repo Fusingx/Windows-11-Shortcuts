@@ -1,7 +1,6 @@
 import tkinter as tk
 import json
 import os
-import pyperclip
 import pyautogui as p
 from datetime import datetime
 
@@ -25,7 +24,6 @@ ROUTINE_TASKS = {
         "Move Offering Bags From Rodwins Office to Church before 8:30am",
         "Attend weekly staff meeting at 9am (1 to 1.5 hours)",
         "Select, Edit and Post (after approval) 11+ Photos (Including Quote) (2-3 Hours)",
-        "Send Chris Calandar Image (5 Minutes)",
         "Send photos onto the church media content group for approval",
         "Edit and Post Podcast (30 Minutes)",
         "Edit and Post YouTube Video of Sermon (30 Minutes)",
@@ -57,12 +55,9 @@ ROUTINE_TASKS = {
     ],
     "Thursday": [
         "Load CITM Worship Songs & Announcement Video (15 Minutes)",
-        "Load Kids Church Powerpoint Presentation (15 Minutes)",
-        "Load Main Service Worship Lyrics (1O Minutes)",
+        "Load Main Service Worship Lyrics (IO Minutes)",
         "Create 'Look Forward' Video (filming / recording & editing) (2-3 Hours)",
-        "Setup Ladies Meeting (Every 2nd & 4th week) (20 Hour)",
         "Do sound and projection for Ladies Meeting (Every 2nd & 4th week) (2 Hour)",
-        "Pack up Ladies Meeting (Every 2nd & 4th week) (20 Hour)",
         "Ensure sound desk and work area is neat and tidy (15 Minutes)",
         "Meet with Chris about Youth Prep (30 Minutes)"
     ],
@@ -82,7 +77,7 @@ current_entry = None
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
-            with open(DATA_FILE, "r") as f:
+            with open(DATA_FILE, "r") as f: # with closes the file, open opens data files in "read only mode", f is a temp var that represents the file
                 data = json.load(f) 
                 saved_date = data.get("date")
                 saved_routine = data.get("routine_tasks", {})
@@ -92,24 +87,19 @@ def load_data():
                     all_states = {**saved_routine, **saved_custom}
                     return all_states, saved_custom
                 
-                else: # new day
-                    today_routine_list = ROUTINE_TASKS.get(DAY_NAME, [])
+                else:
+                    rolled_over_custom = {
+                        task: status for task, status in saved_custom.items() 
+                        if status is False
+                    }
                     
-                    yesterday_all = {**saved_routine, **saved_custom}
-                    unfinished_yesterday = {
-                        task: False for task, status in yesterday_all.items() 
+                    rolled_over_routine = {
+                        task: status for task, status in saved_routine.items() 
                         if status is False
                     }
 
-                    new_custom_rollover = { # make sure rollover tasks arent in todays tasks
-                        task: False for task in unfinished_yesterday 
-                        if task not in today_routine_list
-                    }
-
-                    all_states = {task: False for task in today_routine_list}
-                    all_states.update(unfinished_yesterday)
-
-                    return all_states, new_custom_rollover
+                    merged_rollover = {**rolled_over_routine, **rolled_over_custom}
+                    return merged_rollover, rolled_over_custom
                     
         except (json.JSONDecodeError, KeyError):
             pass
@@ -142,21 +132,12 @@ def toggle_strike(cb, var, task_text):
         cb.config(font=FONT_PRIMARY, fg=FG_TEXT)
     save_data()
 
+
 def delete_task(cb, task_text):
     if task_text in checkbox_vars:
-        del checkbox_vars[task_text]
+        del checkbox_vars[task_text] # tracking dictionary
     cb.destroy()
     save_data()
-
-def on_right_click(event, task_text):
-    pyperclip.copy(task_text)
-    event.widget.config(fg=BG_BORDER)
-
-def on_right_release(event):
-    event.widget.config(fg=FG_TEXT)
-
-# --- Binding ---
-
 
 def create_checkbox(task_text, is_checked=False):
     if task_text in checkbox_vars: return 
@@ -168,15 +149,14 @@ def create_checkbox(task_text, is_checked=False):
         main_container, text=task_text, variable=var,
         bg=BG_MAIN, fg=FG_TEXT, activebackground=BG_MAIN,
         selectcolor=BG_MAIN, font=FONT_PRIMARY,
-        padx=10, pady=2, wraplength=550, justify="left"
+        padx=10, pady=2
     )
 
     cb.config(command=lambda c=cb, v=var, t=task_text: toggle_strike(c, v, t))
-    cb.bind("<Button-2>", lambda event, c=cb, t=task_text: delete_task(c, t))
-    cb.bind("<Button-3>", lambda event: on_right_click(event, task_text))
-    cb.bind("<ButtonRelease-3>", on_right_release)
     
-    cb.pack(pady=2, anchor="w", padx=30)
+    cb.bind("<Button-2>", lambda event, c=cb, t=task_text: delete_task(c, t))
+    
+    cb.pack(pady=2, anchor="w", padx=30) # pady - between cbs // anchor = west // padx - left margin
     toggle_strike(cb, var, task_text)
 
 def on_key_press(event):
@@ -231,11 +211,10 @@ tk.Label(
 saved_states, custom_tasks_only = load_data()
 
 # routine
-current_routine = ROUTINE_TASKS.get(DAY_NAME, ["No Tasks!"])
-for task in current_routine:
+for task in ROUTINE_TASKS.get(DAY_NAME, ["Enjoy your day off!"]):
     create_checkbox(task, is_checked=saved_states.get(task, False))
 
-# custom (includes leftovers from previous days)
+# custom
 for task, status in custom_tasks_only.items():
     create_checkbox(task, is_checked=status)
 

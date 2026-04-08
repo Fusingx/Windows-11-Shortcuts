@@ -17,9 +17,8 @@ import keyboard as key
 # --- CONFIGURATION ---
 CONFIG = {
     "wallpaper_black": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images", "black.png"),
-    #"wallpaper_default": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images", "wallpaper.png"),
-    "wallpaper_1": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images", "wallpaper.png"),
-    "wallpaper_2": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images", "wallpaper.png"),
+    "wallpaper_1": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images", "wallpaper1.png"),
+    "wallpaper_2": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images", "wallpaper2.png"),
     "wallpapers_dir": os.path.join(os.path.dirname(os.path.realpath(__file__)), "wallpapers"),
     "scripts_dir": os.path.dirname(os.path.realpath(__file__)),
     "images_dir": os.path.join(os.path.dirname(os.path.realpath(__file__)), "images"),
@@ -30,7 +29,7 @@ CONFIG = {
         "glaze_wm": r"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\GlazeWM.lnk",
         "spotify": r"C:\Users\Sweetwaters Church\AppData\Roaming\Spotify\Spotify.exe",
         "explorer": r"C:\Users\Sweetwaters Church\Jordan",
-        "schedule": r"C:\Users\Sweetwaters Church\Jordan\Documents\Misc\schedule.xlsx"
+        "tasks": os.path.join(os.path.dirname(__file__), "tasks.py")
     },
     "ignore_titles": {'Zen', 'Explorer', 'CapCut', 'Chrome', 'Select exporting path', 'Spotify', 'File Upload', 'Files'}
 }
@@ -47,7 +46,7 @@ ALT_COMBOS = {
     'shift+b': 'browser',
     'shift+m': 'music',
     'shift+f': 'files',
-    'shift+v': 'vscode',
+    'shift+c': 'vscode',
     'shift+s': 'schedule',
     'shift+y': 'yasb',
     'enter': 'terminal',
@@ -62,11 +61,11 @@ class AutomationEngine:
         self.command_queue = queue.Queue()
         self.running = True
         self.has_wallpaper_changed = False
-        self.suppress_listeners = False # Flag to prevent macros from triggering listeners
+        self.suppress_listeners = False
         
         # State Tracking
         self.modifiers = set()
-        self.gui_process = None  # Track the GUI subprocess
+        self.gui_process = None
         self.alt_mode = False
         self.drag_state = {
             "active": False, "middle_held": False, "hwnd": None, 
@@ -77,16 +76,11 @@ class AutomationEngine:
         self.screen_w, self.screen_h = p.size()
 
     def toggle_schedule(self):
-        # 1. Check if we have a process and if it's ACTUALLY still alive
         if self.gui_process and self.gui_process.poll() is None:
-            # It's alive, so the user wants to close it
             self.gui_process.terminate()
             self.gui_process = None 
         else:
-            # It's either None or it was closed manually, so spawn a fresh one
-            gui_path = os.path.join(os.path.dirname(__file__), "tasks.py")
-            # Use 'python' if you want a console for debugging, 'pythonw' to keep it silent
-            self.gui_process = subprocess.Popen(["pythonw", gui_path])
+            self.gui_process = subprocess.Popen(["pythonw", CONFIG["paths"]["tasks"]])
 
     # --- LOW LEVEL WINDOW HELPERS ---
     def get_window_at_point(self, x, y):
@@ -119,7 +113,6 @@ class AutomationEngine:
         return None
 
     # --- LISTENER CALLBACKS ---
-    # These run in separate threads. They must be fast and thread-safe.
     
     def on_key_press(self, key):
         if self.suppress_listeners: return
@@ -133,7 +126,7 @@ class AutomationEngine:
             self.alt_mode = True
             return
 
-        # Alt-Mode Logic
+        # super logic
         if self.alt_mode:
             combo_parts = []
             if 'ctrl' in self.modifiers: combo_parts.append('ctrl')
@@ -184,11 +177,9 @@ class AutomationEngine:
                 self.command_queue.put(("mouse_macro", "x2"))
 
     def on_move(self, x, y):
-        # High frequency event - keep logic minimal
         ds = self.drag_state
         if ds["middle_held"]:
             if not ds["active"]:
-                # Check threshold
                 dx = abs(x - ds["start_pos"][0])
                 dy = abs(y - ds["start_pos"][1])
                 if dx > 10 or dy > 10:
@@ -197,21 +188,17 @@ class AutomationEngine:
                         ds["active"] = True
                         ds["hwnd"] = hwnd
                         
-                        # Handle maximized windows before dragging
                         if self.is_maximized(hwnd):
                             win32gui.ShowWindow(hwnd, win32con.SW_NORMAL)
-                            time.sleep(0.05) # Allow OS to repaint
-                            # Recalculate center offset
+                            time.sleep(0.05)
                             rect = win32gui.GetWindowRect(hwnd)
                             w, h = rect[2] - rect[0], rect[3] - rect[1]
                             ds["offset"] = (w // 2, h // 2)
-                            # Jump window to cursor
                             win32gui.SetWindowPos(hwnd, None, x - (w//2), y - (h//2), 0, 0, win32con.SWP_NOSIZE | win32con.SWP_NOZORDER)
                         else:
                             rect = win32gui.GetWindowRect(hwnd)
                             ds["offset"] = (x - rect[0], y - rect[1])
             
-            # Perform Drag
             if ds["active"] and ds["hwnd"]:
                 try:
                     rect = win32gui.GetWindowRect(ds["hwnd"])
@@ -228,14 +215,14 @@ class AutomationEngine:
             if dy > 0: self.command_queue.put(("cmd", "alt_scroll_up"))
             elif dy < 0: self.command_queue.put(("cmd", "alt_scroll_down"))
 
-    # --- ACTION HANDLERS (MAIN THREAD) ---
+    # --- ACTION HANDLERS ---
 
     def exec_snap(self, hwnd, y):
         try:
-            if y < 16: # Top Snap
+            if y < 16: # top snap
                 win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
                 win32gui.SetForegroundWindow(hwnd)
-            elif y > (self.screen_h - 20): # Bottom Snap
+            elif y > (self.screen_h - 20): # bottom snap
                 win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
         except Exception as e:
             print(f"Snap failed: {e}")
@@ -260,10 +247,10 @@ class AutomationEngine:
         p.moveTo(current_pos)
 
     def exec_toggle_cursor(self, colour):
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Cursors", 0, winreg.KEY_SET_VALUE) # Update the Registry
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Cursors", 0, winreg.KEY_SET_VALUE)
         winreg.SetValueEx(key, "Arrow", 0, winreg.REG_SZ, colour)
         winreg.CloseKey(key)
-        ctypes.windll.user32.SystemParametersInfoW(0x0057, 0, None, 0) # Tell Windows to update the UI (SystemParametersInfo)
+        ctypes.windll.user32.SystemParametersInfoW(0x0057, 0, None, 0)
 
     def exec_kill_all(self):
         print("Closing user apps...")
@@ -279,7 +266,6 @@ class AutomationEngine:
                     print(f"Closed: {title}")
         
         close_handles()
-        # Fallback force close pass could go here
 
     def exec_shutdown_routine(self):
         hwnd, title, windows = self.get_active_window_info()
@@ -295,9 +281,10 @@ class AutomationEngine:
 
         # Hide Desktop Icons
         p.moveTo(self.screen_w - 5, self.screen_h - 1)
-        p.click(self.screen_w - 5, self.screen_h - 1) # Show desktop corner
-        time.sleep(0.1)
+        p.click(self.screen_w - 5, self.screen_h - 1)
+        time.sleep(0.5)
         p.rightClick(self.screen_w - 30, self.screen_h // 2)
+        time.sleep(0.1)
         p.press('right')
         p.press('up')
         p.press('enter')
@@ -305,8 +292,8 @@ class AutomationEngine:
         self.exec_taskbar_toggle()
     
         # kill windhawk
-        #ctypes.windll.shell32.ShellExecuteW(None, "runas", r"C:\Program Files\Windhawk\Windhawk.exe", "-exit", None, 1)
         p.click(self.find('tray.jpg'))
+        time.sleep(0.2)
         p.rightClick(self.find('windhawk.jpg'))
         time.sleep(0.1)
         p.press('up')
@@ -336,7 +323,6 @@ class AutomationEngine:
         if any(ign in title for ign in CONFIG["ignore_titles"]):
             return
 
-        # Prevent recursive listener triggering during macro execution
         self.suppress_listeners = True 
         
         try:
@@ -374,7 +360,7 @@ class AutomationEngine:
                         p.click()
                         p.hotkey('ctrl', 'a')
                         p.hotkey('alt', 'v')
-                    p.press('esc', presses=2)
+                        p.press('esc', presses=2)
 
             elif 'Lightroom' in title:
                 if button == 'x1': p.press('r')
@@ -387,7 +373,7 @@ class AutomationEngine:
                         if loc2 := self.find('1x1.jpg'): p.click(loc2)
                     p.moveTo(orig_pos)
             
-            else: # Default Media Control
+            else:
                 if button == 'x1': p.press('playpause')
                 else: p.press('nexttrack')
                 
@@ -396,9 +382,7 @@ class AutomationEngine:
 
     # --- MAIN LOOP ---
     def run(self):
-        # Set Wallpaper
-        #win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, CONFIG["wallpaper_default"], 1+2)
-        now = time.localtime() #
+        now = time.localtime()
         initial_wallpaper = CONFIG["wallpaper_1"] if now.tm_hour < 13 else CONFIG["wallpaper_2"]
         win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, initial_wallpaper, 1+2)
 
@@ -409,27 +393,17 @@ class AutomationEngine:
 
         print("Engine Started. Listening...")
 
-        # Start Threads
         m_listener = mouse.Listener(on_click=self.on_click, on_move=self.on_move, on_scroll=self.on_scroll)
         k_listener = keyboard.Listener(on_press=self.on_key_press, on_release=self.on_key_release)
         m_listener.start()
         k_listener.start()
 
-        # Command Consumer Loop
         while self.running:
-            #
-            # CHECK FOR 1 PM WALLPAPER SWAP
             now = time.localtime()
             if now.tm_hour == 13 and now.tm_min == 0 and not self.has_wallpaper_changed:
-                # Set the afternoon wallpaper
                 win32gui.SystemParametersInfo(win32con.SPI_SETDESKWALLPAPER, CONFIG["wallpaper_2"], 1+2)
-                
-                # Also trigger your announcement logic
-                self.command_queue.put(("cmd", "announcement_trigger"))
                 self.has_wallpaper_changed = True
-                #
             try:
-                # Blocks until an item is available - 0% CPU usage while waiting
                 msg_type, data = self.command_queue.get(timeout=1) 
                 
                 if msg_type == "cmd":
@@ -476,11 +450,6 @@ class AutomationEngine:
         elif cmd == 'files': os.startfile("Explorer.exe")  # CONFIG['paths']['explorer']
         elif cmd == 'vscode': os.startfile(CONFIG["paths"]["vscode"])
         elif cmd == 'schedule': self.toggle_schedule()
-            # windows = gw.getAllTitles()
-            # if 'schedule.xlsx - Excel' in windows:
-            #     pass
-            # else:
-            #     os.startfile(CONFIG["paths"]["schedule"])
         elif cmd == 'yasb':
             windows = gw.getAllTitles()
             if 'YasbBar' in windows:
